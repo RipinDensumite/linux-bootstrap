@@ -5,34 +5,41 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Function to print messages with colors
 print_info() {
-    echo -e "${BLUE}$1${NC}"
+    echo -e "${CYAN}* ${1}${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN}$1${NC}"
+    echo -e "${GREEN}✓ ${1}${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}$1${NC}"
+    echo -e "${YELLOW}⚠️ ${1}${NC}"
 }
 
 print_error() {
-    echo -e "${RED}$1${NC}"
+    echo -e "${RED}✗ ${1}${NC}"
+}
+
+print_separator() {
+    echo -e "${BLUE}=========================================${NC}"
 }
 
 # Function to update and upgrade the system
 update_system() {
+    print_separator
     print_info "Updating system..."
     sudo apt-get update && sudo apt-get upgrade -y
 }
 
 # Function to install common packages
 install_packages() {
-    # List of software to install
+    print_separator
+    print_info "Installing common packages..."
     PACKAGES_LIST=(
         "git"
         "curl"
@@ -45,13 +52,12 @@ install_packages() {
         # Add more software as needed
     )
 
-    print_info "Installing common packages..."
     for package in "${PACKAGES_LIST[@]}"; do
         if dpkg -l | grep -qw "$package"; then
             print_warning "$package is already installed. Skipping installation."
         else
             print_info "Installing $package..."
-            if sudo apt-get install -y $package; then
+            if sudo apt-get install -y "$package"; then
                 print_success "$package installed successfully."
             else
                 print_error "Failed to install $package."
@@ -63,6 +69,9 @@ install_packages() {
 
 # Function to change shell to zsh and configure theme
 configure_zsh() {
+    print_separator
+    print_info "Configuring Zsh..."
+    
     if command -v zsh &> /dev/null; then
         print_warning "Zsh is already installed. Skipping configuration."
     else
@@ -97,10 +106,12 @@ configure_zsh() {
 
 # Function to install Docker
 install_docker() {
+    print_separator
+    print_info "Installing Docker service..."
+
     if command -v docker &> /dev/null; then
         print_warning "Docker is already installed. Skipping installation."
     else
-        print_info "Installing Docker service..."
         # Add Docker's GPG key and repository
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -127,11 +138,12 @@ install_docker() {
 
 # Function to install LazyGit
 install_lazygit() {
+    print_separator
+    print_info "Installing LazyGit..."
+    
     if command -v lazygit &> /dev/null; then
         print_warning "LazyGit is already installed. Skipping installation."
     else
-        # Install LazyGit
-        print_info "Installing LazyGit..."
         LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
         curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
         tar xf lazygit.tar.gz lazygit
@@ -146,12 +158,16 @@ install_lazygit() {
 
 # Function to clean up the system
 clean_up() {
+    print_separator
     print_info "Cleaning up..."
     sudo apt-get autoremove -y
     sudo apt-get clean
 }
 
 # Main script execution
+print_separator
+print_info "Starting installation process..."
+
 update_system
 install_packages
 configure_zsh
@@ -160,3 +176,4 @@ install_lazygit
 clean_up
 
 print_success "All software installed successfully."
+print_separator
