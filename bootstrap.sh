@@ -1,123 +1,109 @@
 #!/bin/bash
 
-# Colors
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-RED=$(tput setaf 1)
-RESET=$(tput sgr0)
+# Define colors for visual output
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-# Spinner function for visual feedback during installation
-spinner() {
-    local pid=$!
-    local delay=0.1
-    local spinstr='|/-\'
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
+# Function to print messages with colors
+print_info() {
+    echo -e "${BLUE}$1${NC}"
+}
+
+print_success() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}$1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}$1${NC}"
+}
+
+# Function to update and upgrade the system
+update_system() {
+    print_info "Updating system..."
+    sudo apt-get update && sudo apt-get upgrade -y
+}
+
+# Function to install common packages
+install_packages() {
+    # List of software to install
+    PACKAGES_LIST=(
+        "git"
+        "curl"
+        "vim"
+        "neovim"
+        "zsh"
+        "htop"
+        "nodejs"
+        "npm"
+        # Add more software as needed
+    )
+
+    print_info "Installing common packages..."
+    for package in "${PACKAGES_LIST[@]}"; do
+        if dpkg -l | grep -qw "$package"; then
+            print_warning "$package is already installed. Skipping installation."
+        else
+            print_info "Installing $package..."
+            if sudo apt-get install -y $package; then
+                print_success "$package installed successfully."
+            else
+                print_error "Failed to install $package."
+            fi
+        fi
     done
-    printf "    \b\b\b\b"
+    print_success "Common packages installation completed."
 }
 
-# Function to display section headers
-section() {
-    echo "${YELLOW}==> $1${RESET}"
-}
-
-# Function to display success messages
-success() {
-    echo "${GREEN}$1${RESET}"
-}
-
-# Function to display error messages
-error() {
-    echo "${RED}$1${RESET}"
-}
-
-# Update and upgrade the system
-section "Updating system..."
-sudo apt-get update > /dev/null 2>&1 && sudo apt-get upgrade -y > /dev/null 2>&1 & spinner
-success "System updated."
-
-# List of software to install
-PACKAGES_LIST=(
-    "git"
-    "curl"
-    "vim"
-    "neovim"
-    "htop"
-    "nodejs"
-    "npm"
-    # Add more software as needed
-)
-
-# Install required software from apt repositories
-section "Installing common packages..."
-for package in "${PACKAGES_LIST[@]}"; do
-    if dpkg -l | grep -q "^ii  $package"; then
-        success "$package is already installed, skipping..."
+# Function to change shell to zsh and configure theme
+configure_zsh() {
+    if command -v zsh &> /dev/null; then
+        print_warning "Zsh is already installed. Skipping configuration."
     else
-        section "Installing $package..."
-        sudo apt-get install -y $package > /dev/null 2>&1 & spinner
-        success "$package installed."
+        print_info "Changing shell to zsh..."
+        if chsh -s "$(which zsh)"; then
+            print_success "Zsh has been successfully set as default shell."
+        else
+            print_error "Failed to change shell to zsh."
+        fi
     fi
-done
-success "Common packages installation completed."
 
-install_zsh(){
-	# Check if zsh is installed and change the default shell if necessary
-	if [ -x "$(command -v zsh)" ]; then
-	    success "Zsh is already installed."
-	else
-	    section "Installing zsh..."
-	    sudo apt-get install -y zsh > /dev/null 2>&1 & spinner
-	    success "Zsh installed."
-	fi
+    if [ ! -d "$HOME/.oh-my-zsh" ]; then
+        print_info "Installing Oh My Zsh..."
+        if sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"; then
+            print_success "Oh My Zsh has been successfully installed."
+        else
+            print_error "Failed to install Oh My Zsh."
+        fi
+    else
+        print_warning "Oh My Zsh is already installed. Skipping installation."
+    fi
 
-	# Check the current shell and change to zsh if it's not set
-	if [ "$SHELL" != "$(which zsh)" ]; then
-	    section "Changing shell to zsh..."
-	    chsh -s $(which zsh) > /dev/null 2>&1 & spinner
-	    success "Zsh is now the default shell."
-	else
-	    success "Zsh is already the default shell."
-	fi
-
-	# Install Oh My Zsh if not already installed
-	if [ ! -d "$HOME/.oh-my-zsh" ]; then
-	    section "Installing Oh My Zsh..."
-	    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" > /dev/null 2>&1 & spinner
-	    success "Oh My Zsh installed."
-	else
-	    success "Oh My Zsh is already installed."
-	fi
-
-	# Change Zsh theme to sunaku
-	echo "Changing Zsh theme to 'sunaku'..."
-	# Ensure that the sunaku theme is set in the .zshrc file
-	if grep -q 'ZSH_THEME="sunaku"' ~/.zshrc; then
-		success "Theme 'sunaku' is already set."
-	else
-	    sed -i.bak 's/^ZSH_THEME=".*"/ZSH_THEME="sunaku"/' ~/.zshrc
-	    success "Zsh theme changed to 'sunaku'."
-	fi
+    # Change Zsh theme to sunaku
+    print_info "Changing Zsh theme to 'sunaku'..."
+    if grep -q 'ZSH_THEME="sunaku"' ~/.zshrc; then
+        print_warning "Theme 'sunaku' is already set."
+    else
+        sed -i.bak 's/^ZSH_THEME=".*"/ZSH_THEME="sunaku"/' ~/.zshrc
+        print_success "Zsh theme changed to 'sunaku'."
+    fi
 }
 
-install_zsh
-
+# Function to install Docker
 install_docker() {
-    section "Checking if Docker is installed..."
-
-    # Check if Docker is installed
-    if [ -x "$(command -v docker)" ]; then
-        success "Docker is already installed."
+    if command -v docker &> /dev/null; then
+        print_warning "Docker is already installed. Skipping installation."
     else
-        section "Installing Docker service..."
+        print_info "Installing Docker service..."
         # Add Docker's GPG key and repository
         sudo install -m 0755 -d /etc/apt/keyrings
-        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc > /dev/null 2>&1
+        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
         echo \
         "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
@@ -125,24 +111,52 @@ install_docker() {
         sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         # Update repositories and install Docker
-        sudo apt-get update > /dev/null 2>&1 & spinner
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin > /dev/null 2>&1 & spinner
-        success "Docker installed."
+        sudo apt-get update
+        if sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin; then
+            print_success "Docker installed successfully."
+        else
+            print_error "Failed to install Docker."
+        fi
 
-        # Setup Docker (optional)
-        section "Starting Docker service..."
-        sudo systemctl enable docker > /dev/null 2>&1 & spinner
-        sudo systemctl start docker > /dev/null 2>&1 & spinner
-        success "Docker service started."
+        # Setup Docker
+        print_info "Starting Docker service..."
+        sudo systemctl enable docker
+        sudo systemctl start docker
     fi
 }
 
+# Function to install LazyGit
+install_lazygit() {
+    if command -v lazygit &> /dev/null; then
+        print_warning "LazyGit is already installed. Skipping installation."
+    else
+        # Install LazyGit
+        print_info "Installing LazyGit..."
+        LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
+        curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+        tar xf lazygit.tar.gz lazygit
+        if sudo install lazygit /usr/local/bin; then
+            print_success "LazyGit has been installed successfully."
+        else
+            print_error "Failed to install LazyGit."
+        fi
+        rm lazygit.tar.gz lazygit # Clean up installation files
+    fi
+}
+
+# Function to clean up the system
+clean_up() {
+    print_info "Cleaning up..."
+    sudo apt-get autoremove -y
+    sudo apt-get clean
+}
+
+# Main script execution
+update_system
+install_packages
+configure_zsh
 install_docker
+install_lazygit
+clean_up
 
-# Clean up
-section "Cleaning up..."
-sudo apt-get autoremove -y > /dev/null 2>&1 & spinner
-sudo apt-get clean > /dev/null 2>&1 & spinner
-success "Clean-up completed."
-
-echo "${GREEN}All software installed successfully!${RESET}"
+print_success "All software installed successfully."
