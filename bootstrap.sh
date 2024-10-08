@@ -66,32 +66,46 @@ for package in "${PACKAGES_LIST[@]}"; do
 done
 success "Common packages installation completed."
 
-# Check if zsh is installed and change the default shell if necessary
-if [ -x "$(command -v zsh)" ]; then
-    success "Zsh is already installed."
-else
-    section "Installing zsh..."
-    sudo apt-get install -y zsh > /dev/null 2>&1 & spinner
-    success "Zsh installed."
-fi
+install_zsh(){
+	# Check if zsh is installed and change the default shell if necessary
+	if [ -x "$(command -v zsh)" ]; then
+	    success "Zsh is already installed."
+	else
+	    section "Installing zsh..."
+	    sudo apt-get install -y zsh > /dev/null 2>&1 & spinner
+	    success "Zsh installed."
+	fi
 
-# Check the current shell and change to zsh if it's not set
-if [ "$SHELL" != "$(which zsh)" ]; then
-    section "Changing shell to zsh..."
-    chsh -s $(which zsh) > /dev/null 2>&1 & spinner
-    success "Zsh is now the default shell."
-else
-    success "Zsh is already the default shell."
-fi
+	# Check the current shell and change to zsh if it's not set
+	if [ "$SHELL" != "$(which zsh)" ]; then
+	    section "Changing shell to zsh..."
+	    chsh -s $(which zsh) > /dev/null 2>&1 & spinner
+	    success "Zsh is now the default shell."
+	else
+	    success "Zsh is already the default shell."
+	fi
 
-# Install Oh My Zsh if not already installed
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    section "Installing Oh My Zsh..."
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" > /dev/null 2>&1 & spinner
-    success "Oh My Zsh installed."
-else
-    success "Oh My Zsh is already installed."
-fi
+	# Install Oh My Zsh if not already installed
+	if [ ! -d "$HOME/.oh-my-zsh" ]; then
+	    section "Installing Oh My Zsh..."
+	    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" > /dev/null 2>&1 & spinner
+	    success "Oh My Zsh installed."
+	else
+	    success "Oh My Zsh is already installed."
+	fi
+
+	# Change Zsh theme to sunaku
+	echo "Changing Zsh theme to 'sunaku'..."
+	# Ensure that the sunaku theme is set in the .zshrc file
+	if grep -q 'ZSH_THEME="sunaku"' ~/.zshrc; then
+		success "Theme 'sunaku' is already set."
+	else
+	    sed -i.bak 's/^ZSH_THEME=".*"/ZSH_THEME="sunaku"/' ~/.zshrc
+	    success "Zsh theme changed to 'sunaku'."
+	fi
+}
+
+install_zsh
 
 install_docker() {
     section "Checking if Docker is installed..."
