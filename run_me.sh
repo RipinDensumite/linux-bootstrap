@@ -21,7 +21,7 @@ do
   echo $menu_warning
   read -p "Enter your choice [1-2]: " choice
   case $choice in
-    1) menu_warning="" && main ;;
+    1) clear && menu_warning="" && main ;;
     2) echo "Program exit" && exit 0;;
     *) menu_warning="Please make a correct selection";;
   esac
