@@ -165,15 +165,18 @@ clean_up() {
 }
 
 # Main script execution
-print_separator
-print_info "Starting installation process..."
+main(){
+    print_separator
+    print_info "Starting installation process..."
 
-update_system
-install_packages
-configure_zsh
-install_docker
-install_lazygit
-clean_up
+    update_system
+    install_packages
+    configure_zsh
+    install_docker
+    install_lazygit
+    clean_up
 
-print_success "All software installed successfully."
-print_separator
+    print_success "All software installed successfully. Pressed a key to continue"
+    print_separator
+    read -n1 -s
+}
