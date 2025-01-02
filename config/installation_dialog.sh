@@ -6,6 +6,7 @@ source ./utils.sh
 source ./config/packages/common.sh
 source ./config/packages/docker.sh
 source ./config/packages/helix.sh
+source ./config/packages/speedtest.sh
 
 packages_dialog(){
 # Check if dialog is installed
@@ -23,6 +24,7 @@ OPTIONS=(
   1 "Common software" off
   2 "Docker" off
   3 "Helix" off
+  4 "Speedtest" off
 )
 
 # Display the menu
@@ -40,6 +42,7 @@ for item in $SELECTION; do
     1) SELECTED_PACKAGES+=("common software") ;;
     2) SELECTED_PACKAGES+=("docker") ;;
     3) SELECTED_PACKAGES+=("helix") ;;
+    4) SELECTED_PACKAGES+=("speedtest") ;;
   esac
 done
 
@@ -69,6 +72,9 @@ for package in "${SELECTED_PACKAGES[@]}"; do
       ;;
     "helix")
       install_helix
+      ;;
+    "speedtest")
+      install_speedtest
       ;;
   esac
   echo "$package installation completed."
