@@ -3,6 +3,7 @@ clear
 
 source ./config/utils.sh
 source ./config/installation_dialog.sh
+source ./config/presetup.sh
 
 menu(){
   echo -e "${BLUE}=========================================${NC}"

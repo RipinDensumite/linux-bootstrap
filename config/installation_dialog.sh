@@ -9,13 +9,6 @@ source ./config/packages/helix.sh
 source ./config/packages/speedtest.sh
 
 packages_dialog(){
-# Check if dialog is installed
-if ! command -v dialog &> /dev/null; then
-  echo "Installing dialog..."
-  sudo apt-get update
-  sudo apt-get install -y dialog
-fi
-
 # Temporary file to store the dialog results
 TEMP_FILE=$(mktemp)
 
